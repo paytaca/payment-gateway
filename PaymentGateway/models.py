@@ -24,9 +24,6 @@ class WoocommerceOrder(models.Model):
     total = models.DecimalField(max_digits=10, decimal_places=2)
     created_at = models.DateTimeField()
     updated_at = models.DateTimeField()
-    
-    def __str__(self):
-        return self.username
 
 class KeyAndSecret(models.Model):
     username = models.ForeignKey(User, on_delete=models.CASCADE)
