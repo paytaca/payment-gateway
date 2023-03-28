@@ -24,7 +24,7 @@ class WoocommerceOrder(models.Model):
 
 class KeyAndSecret(models.Model):
     username = models.ForeignKey(User, on_delete=models.CASCADE)
-    store = models.CharField(max_length=255, null=False)
+    store_url = models.CharField(max_length=255, null=False)
     consumer_key = models.CharField(max_length=255, null=False)
     consumer_secret = models.CharField(max_length=255, null=False)
     created_at = models.DateTimeField(auto_now_add=True)
