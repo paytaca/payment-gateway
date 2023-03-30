@@ -34,3 +34,11 @@ class Order(models.Model):
     total = models.DecimalField(max_digits=10, decimal_places=2)
     created_at = models.DateTimeField()
     updated_at = models.DateTimeField()
+
+class TotalSalesByMonth(models.Model):
+    user = models.ForeignKey(User, to_field="username", on_delete=models.CASCADE)
+    month = models.CharField(max_length=7) # YYYY-MM format
+    total_sale = models.DecimalField(max_digits=10, decimal_places=2)
+
+
+    
