@@ -19,7 +19,7 @@ class Command(BaseCommand):
             orders = wcapi.get("orders", params={"status": "completed"}).json()
             totals_by_month = {}
             for order in orders:
-                month = datetime.strptime(order['date_created_gmt'], '%Y-%m-%dT%H:%M:%S').date().replace(day=1).strftime('%Y-%m')
+                month = datetime.strptime(order['date_created_gmt'], '%Y-%m-%dT%H:%M:%S').date().strftime('%Y-%m')
                 if month not in totals_by_month:
                     totals_by_month[month] = Decimal('0')
                 totals_by_month[month] += Decimal(order['total'])
