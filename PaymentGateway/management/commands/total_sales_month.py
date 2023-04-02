@@ -16,14 +16,17 @@ class Command(BaseCommand):
                 version="wc/v3",
                 verify_ssl = False,
             )
-            orders = wcapi.get("orders", params={"status": "completed"}).json()
+            try:
+                orders = wcapi.get("orders", params={"status": "completed"}).json()
+            except:
+                self.stderr.write(self.style.ERROR(f'Error fetching total sales by month for user {store.user}'))
+                continue
             totals_by_month = {}
             for order in orders:
                 month = datetime.strptime(order['date_created_gmt'], '%Y-%m-%dT%H:%M:%S').date().strftime('%Y-%m')
                 if month not in totals_by_month:
                     totals_by_month[month] = Decimal('0')
                 totals_by_month[month] += Decimal(order['total'])
-
             for month, total_sale in totals_by_month.items():
                 TotalSalesByMonth.objects.update_or_create(
                     user=store.user,

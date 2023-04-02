@@ -16,7 +16,11 @@ class Command(BaseCommand):
                 version="wc/v3",
                 verify_ssl = False,
             )
-            orders = wcapi.get("orders", params={"status": "completed"}).json()
+            try:
+                orders = wcapi.get("orders", params={"status": "completed"}).json()
+            except:
+                self.stderr.write(self.style.ERROR(f'Error fetching total sales by year for user {store.user}'))
+                continue
             totals_by_year = {}
             for order in orders:
                 year = datetime.strptime(order['date_created_gmt'], '%Y-%m-%dT%H:%M:%S').date().strftime('%Y')

@@ -14,7 +14,11 @@ class Command(BaseCommand):
                 version="wc/v3",
                 verify_ssl = False,
             )
-            orders = wcapi.get("orders").json()
+            try:
+                orders = wcapi.get("orders").json()
+            except:
+                self.stderr.write(self.style.ERROR(f'Error fetching orders for user {store.user}'))
+                continue
             for order in orders:
                 Order.objects.update_or_create(
                     order_id=order['id'],
