@@ -5,6 +5,8 @@ from django.contrib.auth.hashers import make_password
 
 class User(models.Model):
     user_id = models.AutoField(primary_key=True, null=False)
+    full_name = models.CharField(max_length=255, null=False)
+    email = models.EmailField(max_length=255, null=False, unique=True)
     username = models.CharField(max_length=255, null=False, unique=True)
     password = models.CharField(max_length=100, null=False)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -34,3 +36,17 @@ class Order(models.Model):
     total = models.DecimalField(max_digits=10, decimal_places=2)
     created_at = models.DateTimeField()
     updated_at = models.DateTimeField()
+
+class TotalSalesByMonth(models.Model):
+    user = models.ForeignKey(User, to_field="username", on_delete=models.CASCADE)
+    month = models.CharField(max_length=7) # YYYY-MM format
+    total_sale = models.DecimalField(max_digits=10, decimal_places=2)
+
+class TotalSalesByYear(models.Model):
+    user = models.ForeignKey(User, to_field="username", on_delete=models.CASCADE)
+    year = models.IntegerField()
+    total_sale = models.DecimalField(max_digits=10, decimal_places=2)
+
+
+
+

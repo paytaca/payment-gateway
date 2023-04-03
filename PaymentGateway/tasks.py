@@ -4,3 +4,11 @@ from django.core.management import call_command
 @shared_task
 def get_order():
     call_command('get_order')
+
+@shared_task
+def total_sales_month():
+    call_command('total_sales_month')
+
+@shared_task
+def total_sales_year():
+    call_command('total_sales_year')
