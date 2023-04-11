@@ -34,9 +34,14 @@ class Order(models.Model):
     customer_name = models.CharField(max_length=255)
     status = models.CharField(max_length=50)
     total = models.DecimalField(max_digits=10, decimal_places=2)
+    payment_method = models.CharField(max_length = 255, default="")
     created_at = models.DateTimeField()
     updated_at = models.DateTimeField()
 
+class TotalSales(models.Model):
+    user = models.ForeignKey(User, to_field="username", on_delete=models.CASCADE)
+    total_sale = models.DecimalField(max_digits=10, decimal_places=2)
+    
 class TotalSalesByMonth(models.Model):
     user = models.ForeignKey(User, to_field="username", on_delete=models.CASCADE)
     month = models.CharField(max_length=7) # YYYY-MM format
@@ -46,6 +51,9 @@ class TotalSalesByYear(models.Model):
     user = models.ForeignKey(User, to_field="username", on_delete=models.CASCADE)
     year = models.IntegerField()
     total_sale = models.DecimalField(max_digits=10, decimal_places=2)
+
+
+
 
 
 
