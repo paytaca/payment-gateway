@@ -1,9 +1,9 @@
 from django.contrib import admin
-from PaymentGateway.models import Order, User, Storefront, TotalSalesByMonth, TotalSalesByYear
+from PaymentGateway.models import Order, User, Storefront, TotalSales, TotalSalesByMonth, TotalSalesByYear
 # Register your models here.
 
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ("user", "store", "order_id", "customer_name", "status", "created_at", "updated_at", "total")
+    list_display = ("user", "store", "order_id", "customer_name", "status", "created_at", "updated_at", "total", "payment_method")
     list_filter = ("user", "store", "created_at", "status")
     search_fields = ("user", "order_id", "customer_name", "status")
 
@@ -20,6 +20,13 @@ class StorefrontAdmin(admin.ModelAdmin):
     list_filter = ("user", "store_type", "created_at", "updated_at")
     search_fields = ("user",)
 
+class TotalSalesAdmin(admin.ModelAdmin):
+    list_display = ("user", "total_sale")
+    list_filter = ("user", "total_sale")
+
+    def has_add_permission(self, request, obj=None):
+        return False
+    
 class TotalSalesByMonthAdmin(admin.ModelAdmin):
     list_display = ("user", "month", "total_sale")
     list_filter = ("user", "month", "total_sale")
@@ -37,5 +44,6 @@ class TotalSalesByYearAdmin(admin.ModelAdmin):
 admin.site.register(Order, OrderAdmin)
 admin.site.register(User, UserAdmin)
 admin.site.register(Storefront, StorefrontAdmin)
+admin.site.register(TotalSales, TotalSalesAdmin)
 admin.site.register(TotalSalesByMonth, TotalSalesByMonthAdmin)
 admin.site.register(TotalSalesByYear, TotalSalesByYearAdmin)
