@@ -1,37 +1,27 @@
 from django.core.management.base import BaseCommand
-from woocommerce import API
-from PaymentGateway.models import Storefront, TotalSalesByYear
 from datetime import datetime
-from decimal import Decimal
+from django.db.models import Sum
+from PaymentGateway.models import User, Order, TotalSalesByYear
 
 class Command(BaseCommand):
-    help = "Get total sales by year and store them in the database"
+    help = 'Calculate and store total sales by year'
 
     def handle(self, *args, **options):
-        for store in Storefront.objects.filter(store_type='woocommerce'):
-            wcapi = API(
-                url=store.store_url, #Store url
-                consumer_key=store.key, #consumer key from woocommerce setting
-                consumer_secret=store.secret, #consumer secret from woocommerce setting
-                version="wc/v3",
-                verify_ssl = False,
-            )
-            try:
-                orders = wcapi.get("orders", params={"status": "completed"}).json()
-            except:
-                self.stderr.write(self.style.ERROR(f'Error fetching total sales by year for user {store.user}'))
-                continue
-            totals_by_year = {}
-            for order in orders:
-                year = datetime.strptime(order['date_created_gmt'], '%Y-%m-%dT%H:%M:%S').date().strftime('%Y')
-                if year not in totals_by_year:
-                    totals_by_year[year] = Decimal('0')
-                totals_by_year[year] += Decimal(order['total'])
+        # Get current year
+        now = datetime.now()
+        current_year = now.year
 
-            for year, total_sale in totals_by_year.items():
-                TotalSalesByYear.objects.update_or_create(
-                    user=store.user,
-                    year=year,
-                    defaults={'total_sale': total_sale}
-                )
-                self.stdout.write(self.style.SUCCESS("Success Calculating Total Sales By Year"))
+        # Get total sales by year for each user and store in TotalSalesByYear model
+        for user in User.objects.all():
+            total_sale = Order.objects.filter(
+                user = user,
+                status = 'completed', 
+                created_at__year = current_year
+                ).aggregate(Sum('total'))['total__sum'] or 0
+            
+            TotalSalesByYear.objects.update_or_create(
+                user = user,
+                year = current_year,
+                defaults = {'total_sale': total_sale})
+            
+        self.stdout.write(self.style.SUCCESS('Total sales by year calculated and stored successfully.'))

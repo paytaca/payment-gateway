@@ -1,38 +1,32 @@
 from django.core.management.base import BaseCommand
-from woocommerce import API
-from PaymentGateway.models import Storefront, TotalSalesByMonth
 from datetime import datetime
-from decimal import Decimal
+from django.db.models import Sum
+from PaymentGateway.models import User, Order, TotalSalesByMonth
 
 class Command(BaseCommand):
-    help = "Get total sales by month and store them in the database"
+    help = 'Calculate and store total sales by month'
 
     def handle(self, *args, **options):
-        for store in Storefront.objects.filter(store_type='woocommerce'):
-            wcapi = API(
-                url=store.store_url, #Store url
-                consumer_key=store.key, #consumer key from woocommerce setting
-                consumer_secret=store.secret, #consumer secret from woocommerce setting
-                version="wc/v3",
-                verify_ssl = False,
-            )
-            try:
-                orders = wcapi.get("orders", params={"status": "completed"}).json()
-            except:
-                self.stderr.write(self.style.ERROR(f'Error fetching total sales by month for user {store.user}'))
-                continue
-            totals_by_month = {}
-            for order in orders:
-                month = datetime.strptime(order['date_created_gmt'], '%Y-%m-%dT%H:%M:%S').date().strftime('%Y-%m')
-                if month not in totals_by_month:
-                    totals_by_month[month] = Decimal('0')
-                totals_by_month[month] += Decimal(order['total'])
-            for month, total_sale in totals_by_month.items():
+        # Get current year and month
+        now = datetime.now()
+        current_year = now.year
+        current_month = now.month
+
+        # Get total sales by month for each user and store in TotalSalesByMonth model
+        for user in User.objects.all():
+            for month in range(1, current_month + 1):
+                month_year_str = f'{current_year}-{month:02d}'
+                total_sale = Order.objects.filter(
+                    status = 'completed',
+                    user = user,
+                    created_at__year = current_year,
+                    created_at__month = month
+                    ).aggregate(Sum('total'))['total__sum'] or 0
+                
                 TotalSalesByMonth.objects.update_or_create(
-                    user=store.user,
-                    month=month,
-                    defaults={'total_sale': total_sale}
-                )
-                self.stdout.write(self.style.SUCCESS("Success Calculating Total Sales By Months"))
-        
+                    user = user,
+                    month = month_year_str,
+                    defaults = {'total_sale': total_sale})
+
+        self.stdout.write(self.style.SUCCESS('Successfully calculated and stored total sales by month.'))
         
