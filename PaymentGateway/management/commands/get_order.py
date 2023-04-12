@@ -20,16 +20,18 @@ class Command(BaseCommand):
                 self.stderr.write(self.style.ERROR(f'Error fetching orders for user {store.user}'))
                 continue
             for order in orders:
-                Order.objects.update_or_create(
-                    order_id=order['id'],
-                    store=store.store_type,
-                    user=store.user,
-                    defaults={
-                        'customer_name': order['billing']['first_name'] + ' ' + order['billing']['last_name'],
-                        'total': order['total'],
-                        'status': order['status'],
-                        'created_at': order['date_created'],
-                        'updated_at': order["date_modified"],
-                    }
+                if order['payment_method'] == "bch_payment_gateway":
+                    Order.objects.update_or_create(
+                        order_id=order['id'],
+                        store=store.store_type,
+                        user=store.user,
+                        defaults={
+                            'customer_name': order['billing']['first_name'] + ' ' + order['billing']['last_name'],
+                            'total': order['total'],
+                            'status': order['status'],
+                            'created_at': order['date_created'],
+                            'updated_at': order["date_modified"],
+                            'payment_method': order['payment_method'],
+                        }
                 )
             self.stdout.write(self.style.SUCCESS('Successfully imported WooCommerce orders.'))
