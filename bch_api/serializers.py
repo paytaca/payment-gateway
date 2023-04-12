@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Todo
-from PaymentGateway.models import Order
+from PaymentGateway.models import Order, TotalSalesByMonth
 class TodoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Todo
@@ -9,4 +9,9 @@ class TodoSerializer(serializers.ModelSerializer):
 class TestSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
-        fields = ["user", "order_id", "customer_name", "status", "total", "created_at", "updated_at"]
+        fields = '__all__'
+        
+class TotalSalesByMonthSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TotalSalesByMonth
+        fields = '__all__'
