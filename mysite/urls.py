@@ -48,8 +48,8 @@ urlpatterns = [
     #kanan rest_framework
     path('', include (router.urls)),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
-    path('todos/', include(bch_urls)),
-    path('test/', include(payment_urls)),
+    path('test/', include(bch_urls)),
+    path('payment-gateway/', include(payment_urls)),
     
     path('admin/', admin.site.urls),
     # path('paymentgateway/orders/', order_list, name = 'order_list'),
