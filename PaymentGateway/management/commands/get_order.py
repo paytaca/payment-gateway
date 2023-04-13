@@ -23,7 +23,7 @@ class Command(BaseCommand):
                 if order['payment_method'] == "bch_payment_gateway":
                     Order.objects.update_or_create(
                         order_id=order['id'],
-                        store=store.store_type,
+                        store=store.store_url,
                         user=store.user,
                         defaults={
                             'customer_name': order['billing']['first_name'] + ' ' + order['billing']['last_name'],
