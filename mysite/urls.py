@@ -18,7 +18,7 @@ Including another URLconf
 from django.contrib.auth.models import User
 from rest_framework import routers, serializers, viewsets
 from bch_api import urls as bch_urls
-from PaymentGateway import urls as payment_urls
+
 
 #----------------------------------------------
 
@@ -49,7 +49,8 @@ urlpatterns = [
     path('', include (router.urls)),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('test/', include(bch_urls)),
-    path('payment-gateway/', include(payment_urls)),
+   
+    path('payment-gateway/', include('PaymentGateway.urls')),
     
     path('admin/', admin.site.urls),
     # path('paymentgateway/orders/', order_list, name = 'order_list'),

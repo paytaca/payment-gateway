@@ -1,11 +1,6 @@
-# from django.conf.urls import url
-from django.urls import path, include
-# from .views import (
-#     TestApiView,
-#     TestTotalSalesByMonthApiView,
-# )
+from django.urls import path
+from .views import ProcessOrderAPIView
 
 urlpatterns = [
-    # path('api', TestApiView.as_view()),
-    # path('api/total/', TestTotalSalesByMonthApiView.as_view()),
+    path('process-order/', ProcessOrderAPIView.as_view(), name='process_order'),
 ]
