@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404
 from .models import Order, Storefront
 
 class GetOrderAPIView(APIView):
-    def post(self, request, format=None):
+    def post(self, request):
         # extract order details from the request
         order_id = request.data.get('order_id')
         store_url = request.data.get('store')
@@ -22,11 +22,11 @@ class GetOrderAPIView(APIView):
 
         # create the order only if the storefront exists using WooCommerceAPI
         wcapi = API(
-            url=storefront.store_url, #Store url
-            consumer_key=storefront.key, #consumer key from woocommerce setting
-            consumer_secret=storefront.secret, #consumer secret from woocommerce setting
+            url=storefront.store_url,
+            consumer_key=storefront.key,
+            consumer_secret=storefront.secret,
             version="wc/v3",
-            verify_ssl = False,
+            verify_ssl=False,
         )
 
         # get the order using the order_id and the WooCommerceAPI
@@ -36,6 +36,20 @@ class GetOrderAPIView(APIView):
 
         order_data = response.json()
 
+        # get BCH exchange rate using CoinGecko API
+        bch_rate = None
+        try:
+            response = requests.get("https://api.coingecko.com/api/v3/simple/price", params={"ids": "bitcoin-cash", "vs_currencies": order_data['currency'].lower()})
+            response.raise_for_status()
+            bch_rate = response.json()["bitcoin-cash"][order_data['currency'].lower()]
+        except (requests.exceptions.RequestException, KeyError):
+            pass
+
+        # convert total to BCH
+        total_bch = float(order_data['total'])
+        if bch_rate is not None:
+            total_bch /= bch_rate
+
         # save the order in the Order model
         order = Order(
             user=storefront.user,
@@ -43,7 +57,8 @@ class GetOrderAPIView(APIView):
             order_id=order_data['id'],
             customer_name=order_data['billing']['first_name'] + ' ' + order_data['billing']['last_name'],
             status=order_data['status'],
-            total=float(order_data['total']),
+            total=order_data['total'],
+            total_bch=total_bch,
             payment_method=order_data['payment_method'],
             created_at=order_data['date_created_gmt'],
             updated_at=order_data['date_modified_gmt']
@@ -51,7 +66,7 @@ class GetOrderAPIView(APIView):
         order.save()
 
         return Response({'message': 'Order saved successfully'}, status=status.HTTP_201_CREATED)
-
+    
 class ProcessOrderAPIView(APIView):
     def post(self, request):
         # Get the order ID and store URL from the request body
