@@ -3,7 +3,7 @@ from PaymentGateway.models import Order, User, Storefront, TotalSales, TotalSale
 # Register your models here.
 
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ("user", "store", "order_id", "customer_name", "status", "created_at", "updated_at", "total", "payment_method", "total_received")
+    list_display = ("user", "store", "order_id", "customer_name", "status", "created_at", "updated_at", "total", "total_bch", "payment_method", "total_received")
     list_filter = ("user", "store", "created_at", "status")
     search_fields = ("user", "order_id", "customer_name", "status")
 
