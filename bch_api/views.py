@@ -1,32 +1,28 @@
-# from django.shortcuts import render
-# from django.http import JsonResponse
-# from .models import Order
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
-# from bch_api.models import Todo
-from PaymentGateway.models import User, Order, Storefront, TotalSalesByMonth
-from bch_api.serializers import TodoSerializer, TestSerializer, TotalSalesByMonthSerializer
+from PaymentGateway.models import User, Order, Storefront, TotalSalesByMonth, TotalSales, Test
+from bch_api.serializers import UserSerializer, StorefrontSerializer, OrdersSerializer, TestSerializer, TotalSalesByMonthSerializer
+
+'''Kanan pagtesting han pasa pasa chuchu'''
+# from .serializers import TotalSalesSerializer
+# from PaymentGateway.forms import TestForm
+# from django.http import JsonResponse
+
 # Create your views here.
 
-# def order_list(request):
-#     orders = Order.objects.all()
-#     data = [{
-#         'order_id': Order.order_id,
-#         'customer_name': Order.customer_name,
-#         'status': Order.status,
-#         'total': Order.total,
-#         'created_at': Order.created_at,
-#         'updated_at': Order.updated_at
-#     } for Order in orders]
-
-#     return JsonResponse(data, safe = False)
 
 User = get_user_model()
 
-class TestApiView(APIView):
+class StorefrontApiView(APIView):
+    def get(self, request):
+        storefront = Storefront.objects.all()
+        serializer = StorefrontSerializer(storefront, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class OrdersApiView(APIView):
     # permission_classes = [permissions.IsAuthenticated]
     
     def get(self, request, *args, **kwargs):
@@ -35,12 +31,12 @@ class TestApiView(APIView):
         '''
         # todos = Todo.objects.filter(user = request.user.id)
         # todos = Order.objects.filter(user = str(request.user))
-        todos = Order.objects.all()
+        orders = Order.objects.all()
         # serializer = TodoSerializer(todos, many=True)
-        serializer = TestSerializer(todos, many=True)
+        serializer = OrdersSerializer(orders, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-class TestTotalSalesByMonthApiView(APIView):
+class OrdersTotalSalesByMonthApiView(APIView):
     # add permission to check if user is authenticated
     # permission_classes = [permissions.IsAuthenticated]
 
@@ -72,3 +68,37 @@ class TestTotalSalesByMonthApiView(APIView):
         serializer = TotalSalesByMonthSerializer(todos, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
+class UserApiView(APIView):
+    def get(self, request):
+        '''
+        List all the todo items for given requested user
+        '''
+        # todos = Todo.objects.filter(user = request.user.id)
+        # todos = Order.objects.filter(user = str(request.user))
+        todos = User.objects.all()
+        # serializer = TodoSerializer(todos, many=True)
+        serializer = UserSerializer(todos, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+
+''' kanan pagtesting han pasa pasa chuchu '''
+    
+# class TestView(APIView):
+#     def get(self, request):
+#         total = Test.objects.all()
+#         serializer = TestSerializer(total, many=True)
+
+#         return Response(serializer.data)
+    
+# class CreateTestView(APIView):
+#     """ Create Test Table """
+#     def post (self, request):
+#         form = TestForm(request.data)
+
+#         if form.is_valid():
+#             test = form.save(commit=False)
+#             test.save()
+
+#             return Response({'status': 'New test added'})
+#         else:
+#             return Response({'status': 'errors', 'errors': form.errors})
