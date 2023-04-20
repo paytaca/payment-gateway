@@ -15,10 +15,7 @@ class GetOrderAPIView(APIView):
         store_url = request.data.get('store')
 
         # check if the store_url exists in Storefront model
-        try:
-            storefront = Storefront.objects.get(store_url=store_url)
-        except Storefront.DoesNotExist:
-            return Response({'message': 'Invalid store URL'}, status=status.HTTP_400_BAD_REQUEST)
+        storefront = get_object_or_404(Storefront, store_url=store_url)
 
         # create the order only if the storefront exists using WooCommerceAPI
         wcapi = API(
@@ -30,7 +27,7 @@ class GetOrderAPIView(APIView):
         )
 
         # get the order using the order_id and the WooCommerceAPI
-        response = wcapi.get(f"orders/{order_id}")
+        response = wcapi.get(f"orders/{order_id}")  
         if response.status_code != 200:
             return Response({'message': 'Invalid order ID'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -65,7 +62,7 @@ class GetOrderAPIView(APIView):
         )
         order.save()
 
-        return Response({'message': 'Order saved successfully'}, status=status.HTTP_201_CREATED)
+        return Response({'message': 'Order saved successfully', 'total_bch': total_bch}, status=status.HTTP_201_CREATED)
     
 class ProcessOrderAPIView(APIView):
     def post(self, request):
