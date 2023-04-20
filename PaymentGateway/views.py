@@ -62,8 +62,33 @@ class GetOrderAPIView(APIView):
         )
         order.save()
 
-        return Response({'message': 'Order saved successfully', 'total_bch': total_bch}, status=status.HTTP_201_CREATED)
-    
+        return Response({'message': 'Order saved successfully'}, status=status.HTTP_201_CREATED)
+
+class TotalBCHAPIView(APIView):
+    def post(self, request):
+        # get the order ID from the POST request
+        order_id = request.data.get('order_id')
+
+        # perform any necessary validation on the order ID
+        if not order_id:
+            return Response({'error': 'Order ID is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # get the order object using the order ID
+            order = Order.objects.get(order_id=order_id)
+
+            # calculate the total BCH based on the total amount of the order
+            total_bch = order.total_bch
+
+            # return the total BCH in a JSON response
+            return Response({'total_bch': total_bch}, status=status.HTTP_200_OK)
+
+        except Order.DoesNotExist:
+            return Response({'error': 'Order not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
 class ProcessOrderAPIView(APIView):
     def post(self, request):
         # Get the order ID and store URL from the request body
