@@ -12,7 +12,7 @@ class GetOrderAPIView(APIView):
     def post(self, request):
         # extract order details from the request
         order_id = request.data.get('order_id')
-        store_url = request.data.get('store')
+        store_url = request.data.get('store_url')
 
         # check if the store_url exists in Storefront model
         storefront = get_object_or_404(Storefront, store_url=store_url)
@@ -68,26 +68,20 @@ class TotalBCHAPIView(APIView):
     def post(self, request):
         # get the order ID from the POST request
         order_id = request.data.get('order_id')
+        store_url = request.data.get('store_url')
 
         # perform any necessary validation on the order ID
         if not order_id:
             return Response({'error': 'Order ID is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            # get the order object using the order ID
-            order = Order.objects.get(order_id=order_id)
+        # get the order object using the order ID
+        order = get_object_or_404(Order, store=store_url, order_id=order_id)
 
-            # calculate the total BCH based on the total amount of the order
-            total_bch = order.total_bch
+        # calculate the total BCH based on the total amount of the order
+        total_bch = order.total_bch
 
-            # return the total BCH in a JSON response
-            return Response({'total_bch': total_bch}, status=status.HTTP_200_OK)
-
-        except Order.DoesNotExist:
-            return Response({'error': 'Order not found.'}, status=status.HTTP_404_NOT_FOUND)
-
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        # return the total BCH in a JSON response
+        return Response({'total_bch': total_bch}, status=status.HTTP_200_OK)
         
 class ProcessOrderAPIView(APIView):
     def post(self, request):
