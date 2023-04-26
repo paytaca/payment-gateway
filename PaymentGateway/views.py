@@ -1,12 +1,17 @@
 import base64
 import requests
+import cashaddress
+from pywallet.utils import Wallet
+from base58 import b58decode_check, b58encode_check
+import watchtower
+import random
 from datetime import datetime
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from woocommerce import API
 from django.shortcuts import get_object_or_404
-from .models import Order, Storefront
+from .models import Order, Storefront, User
 
 class GetOrderAPIView(APIView):
     def post(self, request):
@@ -80,8 +85,37 @@ class TotalBCHAPIView(APIView):
         # calculate the total BCH based on the total amount of the order
         total_bch = order.total_bch
 
+        # generate a new BCH address for the order using the associated user
+        user = get_object_or_404(User, username=order.user)
+        print(user.xpub_key)
+        print(user.wallet_hash)
+
+        new_bch_address = self.generate_address(
+            project_id = "964e97eb-b88c-4562-ae18-c45c90756db7",
+            wallet_hash = user.wallet_hash,
+            xpub_key = user.xpub_key,
+            index = random.randint(0, 64),
+            webhook_url = None
+        )
+        print(new_bch_address)
+        
         # return the total BCH in a JSON response
-        return Response({'total_bch': total_bch}, status=status.HTTP_200_OK)
+        return Response({'total_bch': total_bch, 'bch_address': new_bch_address}, status=status.HTTP_200_OK)
+    
+    def generate_address(self, project_id, wallet_hash, xpub_key, index, webhook_url):
+        wallet_obj = Wallet.deserialize(
+            xpub_key,
+            network='BCH'
+        )
+        child_wallet = wallet_obj.get_child_for_path('0')
+        new_address = child_wallet.create_new_address_for_user(index)
+        bitpay_addr = new_address.to_address()
+        legacy = b58encode_check(b'\x00' + b58decode_check(bitpay_addr)[1:])
+        addr_obj = cashaddress.convert.Address.from_string(legacy)
+        cash_addr = addr_obj.cash_address()
+        
+        print("Cash Address: ", cash_addr)
+        return cash_addr
         
 class ProcessOrderAPIView(APIView):
     def post(self, request):
