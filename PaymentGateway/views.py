@@ -4,7 +4,6 @@ import cashaddress
 from pywallet.utils import Wallet
 from base58 import b58decode_check, b58encode_check
 import watchtower
-import random
 from datetime import datetime
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -79,10 +78,10 @@ class TotalBCHAPIView(APIView):
         if not order_id:
             return Response({'error': 'Order ID is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # get the order object using the order ID
+        # get the order and url using the order ID
         order = get_object_or_404(Order, store=store_url, order_id=order_id)
 
-        # calculate the total BCH based on the total amount of the order
+        # get the total BCH based on the total amount of the order
         total_bch = order.total_bch
 
         # generate a new BCH address for the order using the associated user
@@ -92,7 +91,7 @@ class TotalBCHAPIView(APIView):
             project_id = "964e97eb-b88c-4562-ae18-c45c90756db7",
             wallet_hash = user.wallet_hash,
             xpub_key = user.xpub_key,
-            index = random.randint(0, 100),
+            index = order.order_id,
             webhook_url = ""
         )
 
@@ -122,7 +121,7 @@ class TotalBCHAPIView(APIView):
         }
 
         result = watchtower.subscribe(**data)
-        
+
         if result['success']:
             print("Cash Address: ", cash_addr)
             return cash_addr
@@ -131,7 +130,7 @@ class TotalBCHAPIView(APIView):
         
 class ProcessOrderAPIView(APIView):
     def post(self, request):
-        # Get the order ID and store URL from the request body
+        # Get the order ID, store URL, and total recieved from the request body
         order_id = request.data.get('order_id')
         store_url = request.data.get('store_url')
         total_recieved = request.data.get('total_recieved')
