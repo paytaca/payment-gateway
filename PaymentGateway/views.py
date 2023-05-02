@@ -26,11 +26,8 @@ class GetOrderAPIView(APIView):
             return Response('Storefront URL is required.', status=status.HTTP_400_BAD_REQUEST)
         
         # check if the store_url exists in Storefront model
-        try:
-            storefront = get_object_or_404(Storefront, store_url=store_url)
-        except Storefront.DoesNotExist:
-            return Response('Invalid storefront URL', status=status.HTTP_400_BAD_REQUEST)
-
+        storefront = get_object_or_404(Storefront, store_url=store_url)
+        
         # create the order only if the storefront exists using WooCommerceAPI
         wcapi = API(
             url=storefront.store_url,
