@@ -28,16 +28,18 @@ class User(models.Model):
 class Storefront(models.Model):
     user = models.ForeignKey(User, to_field="username", on_delete=models.CASCADE)
     store_type = models.CharField(max_length=255, null=False,)
-    store_url = models.CharField(max_length=255, null=False)
+    store_url = models.CharField(max_length=255, null=False, unique=True)
     key = models.CharField(max_length=255, null=False)
     secret = models.CharField(max_length=255, null=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def __str__(self):
+        return self.store_url
+    
 class Order(models.Model):
-    user = models.ForeignKey(User, to_field="username", on_delete=models.CASCADE)
-    store = models.CharField(max_length=255)
-    order_id = models.IntegerField(primary_key=True)
+    store = models.ForeignKey(Storefront, to_field="store_url", on_delete=models.CASCADE)
+    order_id = models.IntegerField()
     customer_name = models.CharField(max_length=255)
     status = models.CharField(max_length=50)
     total = models.DecimalField(max_digits=10, decimal_places=2)
@@ -48,16 +50,16 @@ class Order(models.Model):
     updated_at = models.DateTimeField()
 
 class TotalSales(models.Model):
-    user = models.ForeignKey(User, to_field="username", on_delete=models.CASCADE)
+    store = models.ForeignKey(Storefront, to_field="store_url", on_delete=models.CASCADE)
     total_sale = models.DecimalField(max_digits=10, decimal_places=2)
     
 class TotalSalesByMonth(models.Model):
-    user = models.ForeignKey(User, to_field="username", on_delete=models.CASCADE)
+    store = models.ForeignKey(Storefront, to_field="store_url", on_delete=models.CASCADE)
     month = models.CharField(max_length=7) # YYYY-MM format
     total_sale = models.DecimalField(max_digits=10, decimal_places=2)
 
 class TotalSalesByYear(models.Model):
-    user = models.ForeignKey(User, to_field="username", on_delete=models.CASCADE)
+    store = models.ForeignKey(Storefront, to_field="store_url", on_delete=models.CASCADE)
     year = models.IntegerField()
     total_sale = models.DecimalField(max_digits=10, decimal_places=2)
 

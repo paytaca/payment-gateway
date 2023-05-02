@@ -10,7 +10,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from woocommerce import API
 from django.shortcuts import get_object_or_404
-from .models import Order, Storefront, User
+from .models import Order, Storefront
+from decimal import Decimal
 
 class GetOrderAPIView(APIView):
     def post(self, request):
@@ -18,8 +19,17 @@ class GetOrderAPIView(APIView):
         order_id = request.data.get('order_id')
         store_url = request.data.get('store_url')
 
+        # perform any necessary validation on the order ID and storefront URL
+        if not order_id:
+            return Response('Order ID is required.', status=status.HTTP_400_BAD_REQUEST)
+        if not store_url:
+            return Response('Storefront URL is required.', status=status.HTTP_400_BAD_REQUEST)
+        
         # check if the store_url exists in Storefront model
-        storefront = get_object_or_404(Storefront, store_url=store_url)
+        try:
+            storefront = get_object_or_404(Storefront, store_url=store_url)
+        except Storefront.DoesNotExist:
+            return Response('Invalid storefront URL', status=status.HTTP_400_BAD_REQUEST)
 
         # create the order only if the storefront exists using WooCommerceAPI
         wcapi = API(
@@ -33,7 +43,7 @@ class GetOrderAPIView(APIView):
         # get the order using the order_id and the WooCommerceAPI
         response = wcapi.get(f"orders/{order_id}")  
         if response.status_code != 200:
-            return Response({'message': 'Invalid order ID'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response('Invalid order ID', status=status.HTTP_400_BAD_REQUEST)
 
         order_data = response.json()
 
@@ -47,14 +57,13 @@ class GetOrderAPIView(APIView):
             pass
 
         # convert total to BCH
-        total_bch = float(order_data['total'])
+        total_bch = Decimal(order_data['total'])
         if bch_rate is not None:
-            total_bch /= bch_rate
+            total_bch /= Decimal(bch_rate)
 
         # save the order in the Order model
         order = Order(
-            user=storefront.user,
-            store=storefront.store_url,
+            store=storefront,
             order_id=order_data['id'],
             customer_name=order_data['billing']['first_name'] + ' ' + order_data['billing']['last_name'],
             status=order_data['status'],
@@ -66,33 +75,35 @@ class GetOrderAPIView(APIView):
         )
         order.save()
 
-        return Response({'message': 'Order saved successfully'}, status=status.HTTP_201_CREATED)
+        return Response('Order saved successfully', status=status.HTTP_201_CREATED)
 
 class TotalBCHAPIView(APIView):
     def post(self, request):
-        # get the order ID from the POST request
+        # get the order ID and storefront URL from the POST request
         order_id = request.data.get('order_id')
         store_url = request.data.get('store_url')
 
-        # perform any necessary validation on the order ID
+        # perform any necessary validation on the order ID and storefront URL
         if not order_id:
             return Response({'error': 'Order ID is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not store_url:
+            return Response({'error': 'Storefront URL is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # get the order and url using the order ID
-        order = get_object_or_404(Order, store=store_url, order_id=order_id)
+        # get the order and storefront using the order ID and storefront URL
+        storefront = get_object_or_404(Storefront, store_url=store_url)
+        order = get_object_or_404(Order, store=storefront, order_id=order_id)
 
         # get the total BCH based on the total amount of the order
         total_bch = order.total_bch
 
-        # generate a new BCH address for the order using the associated user
-        user = get_object_or_404(User, username=order.user)
-
+        # generate a new BCH address for the order using the associated user of the storefront
+        owner = storefront.user
         new_bch_address = self.generate_address(
             project_id = "964e97eb-b88c-4562-ae18-c45c90756db7",
-            wallet_hash = user.wallet_hash,
-            xpub_key = user.xpub_key,
+            wallet_hash = owner.wallet_hash,
+            xpub_key = owner.xpub_key,
             index = order.order_id,
-            webhook_url = ""
+            webhook_url=""
         )
 
         # return the total BCH in a JSON response
@@ -134,6 +145,7 @@ class ProcessOrderAPIView(APIView):
         order_id = request.data.get('order_id')
         store_url = request.data.get('store_url')
         total_recieved = request.data.get('total_recieved')
+
         # Get the order from the database using the order ID and store URL
         order = get_object_or_404(Order, order_id=order_id, store=store_url)
 
