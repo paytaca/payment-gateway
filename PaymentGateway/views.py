@@ -5,12 +5,93 @@ from pywallet.utils import Wallet
 from base58 import b58decode_check, b58encode_check
 import watchtower
 from datetime import datetime
+from decimal import Decimal
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from woocommerce import API
+from rest_framework.authtoken.models import Token
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import AllowAny
+# from rest_framework.permissions import DjangoModelPermissionsOrAnonReadOnly
+
+from django.contrib.auth import authenticate, login
+# from django.contrib.auth.decorators import permission_required
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.models import Permission
+from django.contrib.auth.hashers import check_password 
 from django.shortcuts import get_object_or_404
-from .models import Order, Storefront, User
+
+from woocommerce import API
+from .models import Order, Storefront, User, Product, OrderItem
+from .forms import UserForm, WalletForm
+from bch_api.serializers import UserSerializer, ListUsersSerializer
+
+class UserApiView(APIView):
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    queryset = User.objects.all()
+    
+    # user = authenticate(username='john', password='secret')
+    
+    def get(self, request):
+        '''
+        List all the todo items for given requested user
+        '''
+        # todos = Todo.objects.filter(user = request.user.id)
+        # todos = Order.objects.filter(user = str(request.user))
+        get_users = User.objects.all()
+        # serializer = TodoSerializer(todos, many=True)
+        serializer = ListUsersSerializer(get_users, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class SignUpAPIView(APIView):
+    permission_classes = [AllowAny]
+    
+    @csrf_exempt
+    def post(self, request):
+        form = UserForm(request.data)
+        
+        if form.is_valid():
+            save_form = form.save(commit=False)
+            save_form.save()
+            
+            token = Token.objects.create(user=save_form.auth_user)
+            
+            return Response({'token': token.key, 'status': 'New User added'})
+        else:
+            return Response({'status': 'errors', 'errors': form.errors})
+        
+class LoginAPIView(APIView):
+    # permission_classes = [IsAuthenticated]  # Add this line to require authentication
+    permission_classes = [AllowAny]
+    
+    @csrf_exempt
+    def post(self, request):
+        email = request.data.get('email')
+        password = request.data.get('password')
+        
+        user = authenticate(username=email, password=password)
+        
+        if user is not None:
+            token, _ = Token.objects.get_or_create(user=user)
+            user = User.objects.get(email=email)
+            full_name = user.full_name
+            return Response({'token': token.key, 'full_name': full_name , 'status': 'success'})
+        else:
+            return Response({'status': 'error', 'message': 'Invalid email or password'})
+        
+class WalletAPIView(APIView):
+    def post(self, request):
+        form = WalletForm(request.data)
+        
+        if form.is_valid():
+            save_form = form.save(commit=False)
+            save_form.save()
+            
+            return Response({'status': 'Paytaca Wallet updated'})
+        else:
+            return Response({'status': 'errors', 'errors': form.errors})
 
 class GetOrderAPIView(APIView):
     def post(self, request):
@@ -18,9 +99,15 @@ class GetOrderAPIView(APIView):
         order_id = request.data.get('order_id')
         store_url = request.data.get('store_url')
 
+        # perform any necessary validation on the order ID and storefront URL
+        if not order_id:
+            return Response('Order ID is required.', status=status.HTTP_400_BAD_REQUEST)
+        if not store_url:
+            return Response('Storefront URL is required.', status=status.HTTP_400_BAD_REQUEST)
+        
         # check if the store_url exists in Storefront model
         storefront = get_object_or_404(Storefront, store_url=store_url)
-
+        
         # create the order only if the storefront exists using WooCommerceAPI
         wcapi = API(
             url=storefront.store_url,
@@ -33,7 +120,7 @@ class GetOrderAPIView(APIView):
         # get the order using the order_id and the WooCommerceAPI
         response = wcapi.get(f"orders/{order_id}")  
         if response.status_code != 200:
-            return Response({'message': 'Invalid order ID'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response('Invalid order ID', status=status.HTTP_400_BAD_REQUEST)
 
         order_data = response.json()
 
@@ -47,14 +134,13 @@ class GetOrderAPIView(APIView):
             pass
 
         # convert total to BCH
-        total_bch = float(order_data['total'])
+        total_bch = Decimal(order_data['total'])
         if bch_rate is not None:
-            total_bch /= bch_rate
+            total_bch /= Decimal(bch_rate)
 
         # save the order in the Order model
         order = Order(
-            user=storefront.user,
-            store=storefront.store_url,
+            store=storefront,
             order_id=order_data['id'],
             customer_name=order_data['billing']['first_name'] + ' ' + order_data['billing']['last_name'],
             status=order_data['status'],
@@ -66,33 +152,57 @@ class GetOrderAPIView(APIView):
         )
         order.save()
 
-        return Response({'message': 'Order saved successfully'}, status=status.HTTP_201_CREATED)
+        # get the products from the order and save them in the database
+        for item in order_data['line_items']:
+            product_id = item['product_id']
+            product = Product.objects.filter(store=storefront, product_id=product_id).first()
+            if product is None:
+                product_data = wcapi.get(f"products/{product_id}").json()
+                product = Product(
+                    store=storefront,
+                    product_id=product_id,
+                    name=product_data['name'],
+                    price=Decimal(product_data['price']),
+                )
+                product.save()
+            quantity = item['quantity']
+            OrderItem.objects.create(
+                order=order,
+                product=product,
+                store=storefront,
+                quantity=quantity,
+                price=Decimal(item['price']),
+            )
+
+        return Response('Order saved successfully', status=status.HTTP_201_CREATED)
 
 class TotalBCHAPIView(APIView):
     def post(self, request):
-        # get the order ID from the POST request
+        # get the order ID and storefront URL from the POST request
         order_id = request.data.get('order_id')
         store_url = request.data.get('store_url')
 
-        # perform any necessary validation on the order ID
+        # perform any necessary validation on the order ID and storefront URL
         if not order_id:
             return Response({'error': 'Order ID is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not store_url:
+            return Response({'error': 'Storefront URL is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # get the order and url using the order ID
-        order = get_object_or_404(Order, store=store_url, order_id=order_id)
+        # get the order and storefront using the order ID and storefront URL
+        storefront = get_object_or_404(Storefront, store_url=store_url)
+        order = get_object_or_404(Order, store=storefront, order_id=order_id)
 
         # get the total BCH based on the total amount of the order
         total_bch = order.total_bch
 
-        # generate a new BCH address for the order using the associated user
-        user = get_object_or_404(User, username=order.user)
-
+        # generate a new BCH address for the order using the associated user of the storefront
+        owner = storefront.user
         new_bch_address = self.generate_address(
             project_id = "964e97eb-b88c-4562-ae18-c45c90756db7",
-            wallet_hash = user.wallet_hash,
-            xpub_key = user.xpub_key,
+            wallet_hash = owner.wallet_hash,
+            xpub_key = owner.xpub_key,
             index = order.order_id,
-            webhook_url = ""
+            webhook_url=""
         )
 
         # return the total BCH in a JSON response
@@ -134,6 +244,7 @@ class ProcessOrderAPIView(APIView):
         order_id = request.data.get('order_id')
         store_url = request.data.get('store_url')
         total_recieved = request.data.get('total_recieved')
+
         # Get the order from the database using the order ID and store URL
         order = get_object_or_404(Order, order_id=order_id, store=store_url)
 

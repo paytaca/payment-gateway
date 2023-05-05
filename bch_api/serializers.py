@@ -1,6 +1,6 @@
 from rest_framework import serializers
 # from .models import Todo
-from PaymentGateway.models import User, Storefront, Order, TotalSalesByMonth, TotalSales, Test
+from PaymentGateway.models import User, Storefront, Order, TotalSalesByMonth, TotalSales
 
 class StorefrontSerializer(serializers.ModelSerializer):
     class Meta:
@@ -11,6 +11,11 @@ class OrdersSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = '__all__'
+        
+class ListUsersSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['user_id', 'email']
         
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -26,11 +31,3 @@ class TotalSalesSerializer(serializers.ModelSerializer):
     class Meta:
         model = TotalSales
         fields = '_all_'
-        
-
-''' kanan pagtesting han pasa pasa chuchu '''
-        
-# class TestSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Test
-#         fields = '__all__'

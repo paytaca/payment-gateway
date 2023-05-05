@@ -3,8 +3,8 @@ from rest_framework.response import Response
 from rest_framework import status, permissions
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
-from PaymentGateway.models import User, Order, Storefront, TotalSalesByMonth, TotalSales, Test
-from bch_api.serializers import UserSerializer, StorefrontSerializer, OrdersSerializer, TestSerializer, TotalSalesByMonthSerializer
+from PaymentGateway.models import User, Order, Storefront, TotalSalesByMonth, TotalSales
+from bch_api.serializers import UserSerializer, StorefrontSerializer, OrdersSerializer, TotalSalesByMonthSerializer
 
 '''Kanan pagtesting han pasa pasa chuchu'''
 # from .serializers import TotalSalesSerializer

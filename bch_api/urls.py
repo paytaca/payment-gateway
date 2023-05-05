@@ -4,9 +4,7 @@ from .views import (
     UserApiView,
     StorefrontApiView,
     OrdersApiView,
-    OrdersTotalSalesByMonthApiView,
-    TestView,
-    CreateTestView
+    OrdersTotalSalesByMonthApiView
 )
 
 urlpatterns = [
@@ -16,11 +14,11 @@ urlpatterns = [
     
     # path('users', UserApiView.as_view()),
     
-    path('storefront', StorefrontApiView.as_view()),
+    # path('storefront', StorefrontApiView.as_view()),
     
     path('orders', OrdersApiView.as_view()),
     path('orders/total/', OrdersTotalSalesByMonthApiView.as_view()),
     
-    path('test/list/', TestView.as_view()),
-    path('test/create/', CreateTestView.as_view()),
+    # path('test/list/', TestView.as_view()),
+    # path('test/create/', CreateTestView.as_view()),
 ]
