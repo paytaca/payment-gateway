@@ -37,6 +37,7 @@ class Storefront(models.Model):
     user = models.ForeignKey(User, to_field="username", on_delete=models.CASCADE)
     store_type = models.CharField(max_length=255, null=False,)
     store_url = models.CharField(max_length=255, null=False, unique=True)
+    store_url = models.CharField(max_length=255, null=False, unique=True)
     key = models.CharField(max_length=255, null=False)
     secret = models.CharField(max_length=255, null=False)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -44,8 +45,10 @@ class Storefront(models.Model):
 
     def __str__(self):
         return self.store_url
-
+    
 class Order(models.Model):
+    store = models.ForeignKey(Storefront, to_field="store_url", on_delete=models.CASCADE)
+    order_id = models.IntegerField()
     store = models.ForeignKey(Storefront, to_field="store_url", on_delete=models.CASCADE)
     order_id = models.IntegerField()
     customer_name = models.CharField(max_length=255)
@@ -75,8 +78,40 @@ class OrderItem(models.Model):
     store = models.CharField(max_length=255)
     quantity = models.IntegerField(default=0)
     price = models.DecimalField(max_digits=5, default=0, decimal_places=2)
+    
+    def __str__(self):
+        return str(self.order_id)
+    
+class Product(models.Model):
+    store = models.ForeignKey(Storefront, on_delete=models.CASCADE)
+    product_id = models.IntegerField()
+    name = models.CharField(max_length=200)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
 
+    def __str__(self):
+        return self.name
+    
+class OrderItem(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    order = models.ForeignKey(Order, on_delete=models.CASCADE)
+    store = models.CharField(max_length=255)
+    quantity = models.IntegerField(default=0)
+    price = models.DecimalField(max_digits=5, default=0, decimal_places=2)
+    
 class TotalSales(models.Model):
+    store = models.ForeignKey(Storefront, to_field="store_url", on_delete=models.CASCADE)
+    total_sale = models.DecimalField(max_digits=10, decimal_places=2)
+    total_orders = models.IntegerField(default=0)
+    products_sold = models.IntegerField(default=0)
+    total_customers = models.IntegerField(default=0)
+    total_sale_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    total_orders_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    products_sold_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    total_customers_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    date_created = models.DateField(blank=True, null=True)
+
+class TotalSalesYesterday(models.Model):
+    store = models.ForeignKey(Storefront, to_field="store_url", on_delete=models.CASCADE)
     store = models.ForeignKey(Storefront, to_field="store_url", on_delete=models.CASCADE)
     total_sale = models.DecimalField(max_digits=10, decimal_places=2)
     total_orders = models.IntegerField(default=0)
@@ -95,13 +130,19 @@ class TotalSalesYesterday(models.Model):
     products_sold = models.IntegerField(default=0)
     total_customers = models.IntegerField(default=0)
     date_created = models.DateField(blank=True, null=True)
+    total_orders = models.IntegerField(default=0)
+    products_sold = models.IntegerField(default=0)
+    total_customers = models.IntegerField(default=0)
+    date_created = models.DateField(blank=True, null=True)
     
 class TotalSalesByMonth(models.Model):
+    store = models.ForeignKey(Storefront, to_field="store_url", on_delete=models.CASCADE)
     store = models.ForeignKey(Storefront, to_field="store_url", on_delete=models.CASCADE)
     month = models.CharField(max_length=7) # YYYY-MM format
     total_sale = models.DecimalField(max_digits=10, decimal_places=2)
 
 class TotalSalesByYear(models.Model):
+    store = models.ForeignKey(Storefront, to_field="store_url", on_delete=models.CASCADE)
     store = models.ForeignKey(Storefront, to_field="store_url", on_delete=models.CASCADE)
     year = models.IntegerField()
     total_sale = models.DecimalField(max_digits=10, decimal_places=2)
