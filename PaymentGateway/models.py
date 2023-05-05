@@ -37,7 +37,6 @@ class Storefront(models.Model):
     user = models.ForeignKey(User, to_field="username", on_delete=models.CASCADE)
     store_type = models.CharField(max_length=255, null=False,)
     store_url = models.CharField(max_length=255, null=False, unique=True)
-    store_url = models.CharField(max_length=255, null=False, unique=True)
     key = models.CharField(max_length=255, null=False)
     secret = models.CharField(max_length=255, null=False)
     created_at = models.DateTimeField(auto_now_add=True)
