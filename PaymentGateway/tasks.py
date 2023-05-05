@@ -16,3 +16,7 @@ def total_sales_year():
 @shared_task
 def total_sales():
     call_command('total_sales')
+
+@shared_task
+def total_sales_yesterday():
+    call_command("total_sales_yesterday")

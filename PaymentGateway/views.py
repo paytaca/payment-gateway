@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from woocommerce import API
 from django.shortcuts import get_object_or_404
-from .models import Order, Storefront
+from .models import Order, Storefront, Product, OrderItem
 from decimal import Decimal
 
 class GetOrderAPIView(APIView):
@@ -71,6 +71,28 @@ class GetOrderAPIView(APIView):
             updated_at=order_data['date_modified_gmt']
         )
         order.save()
+
+        # get the products from the order and save them in the database
+        for item in order_data['line_items']:
+            product_id = item['product_id']
+            product = Product.objects.filter(store=storefront, product_id=product_id).first()
+            if product is None:
+                product_data = wcapi.get(f"products/{product_id}").json()
+                product = Product(
+                    store=storefront,
+                    product_id=product_id,
+                    name=product_data['name'],
+                    price=Decimal(product_data['price']),
+                )
+                product.save()
+            quantity = item['quantity']
+            OrderItem.objects.create(
+                order=order,
+                product=product,
+                store=storefront,
+                quantity=quantity,
+                price=Decimal(item['price']),
+            )
 
         return Response('Order saved successfully', status=status.HTTP_201_CREATED)
 

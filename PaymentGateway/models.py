@@ -48,10 +48,45 @@ class Order(models.Model):
     total_received = models.DecimalField(max_digits=20, decimal_places=8, default=0)
     created_at = models.DateTimeField()
     updated_at = models.DateTimeField()
+    
+    def __str__(self):
+        return str(self.order_id)
+    
+class Product(models.Model):
+    store = models.ForeignKey(Storefront, on_delete=models.CASCADE)
+    product_id = models.IntegerField()
+    name = models.CharField(max_length=200)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
 
+    def __str__(self):
+        return self.name
+    
+class OrderItem(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    order = models.ForeignKey(Order, on_delete=models.CASCADE)
+    store = models.CharField(max_length=255)
+    quantity = models.IntegerField(default=0)
+    price = models.DecimalField(max_digits=5, default=0, decimal_places=2)
+    
 class TotalSales(models.Model):
     store = models.ForeignKey(Storefront, to_field="store_url", on_delete=models.CASCADE)
     total_sale = models.DecimalField(max_digits=10, decimal_places=2)
+    total_orders = models.IntegerField(default=0)
+    products_sold = models.IntegerField(default=0)
+    total_customers = models.IntegerField(default=0)
+    total_sale_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    total_orders_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    products_sold_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    total_customers_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    date_created = models.DateField(blank=True, null=True)
+
+class TotalSalesYesterday(models.Model):
+    store = models.ForeignKey(Storefront, to_field="store_url", on_delete=models.CASCADE)
+    total_sale = models.DecimalField(max_digits=10, decimal_places=2)
+    total_orders = models.IntegerField(default=0)
+    products_sold = models.IntegerField(default=0)
+    total_customers = models.IntegerField(default=0)
+    date_created = models.DateField(blank=True, null=True)
     
 class TotalSalesByMonth(models.Model):
     store = models.ForeignKey(Storefront, to_field="store_url", on_delete=models.CASCADE)
