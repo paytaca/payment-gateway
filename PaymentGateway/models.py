@@ -1,40 +1,52 @@
 from django.db import models
 from django.contrib.auth.hashers import make_password
-from django.contrib.auth.models import User as AuthUser
+from django.contrib.auth.models import User
+from rest_framework.authtoken.models import Token
 
-class User(models.Model):
+class Account(models.Model):
     user_id = models.AutoField(primary_key=True, null=False, unique=True)
     full_name = models.CharField(max_length=255, null=False)
     email = models.EmailField(max_length=255, null=False, unique=True)
     username = models.CharField(max_length=255, null=False, unique=True)
     password = models.CharField(max_length=100, null=False)
-    xpub_key = models.CharField(max_length=255, null=False, default="a1")
-    wallet_hash = models.CharField(max_length=255, null=False, default="a2")
+    xpub_key = models.CharField(max_length=255, null=True)
+    wallet_hash = models.CharField(max_length=255, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     last_login = models.DateTimeField(null=True, blank=True)
-    auth_user = models.ForeignKey(AuthUser, on_delete=models.CASCADE, null=True, blank=True)
+    auth_user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='accounts')
     
     def __str__(self):
         return self.username
     
     def save(self, *args, **kwargs):
         if not self.pk:
-            # if creating a new user, create a new auth user and assign it to the user
-            auth_user = AuthUser.objects.create_superuser(
+            auth_user = User.objects.create_superuser(
                 username=self.email,
                 email=self.email,
                 password=self.password
             )
             self.password = make_password(self.password)
             self.auth_user = auth_user
-        super(User, self).save(*args, **kwargs)
+        super(Account, self).save(*args, **kwargs)
+        
+    @staticmethod
+    def get_account_from_token(token):
+        try:
+            token = Token.objects.get(key=token)
+            user = token.user
+            if user:
+                return user
+            else:
+                return None
+        except Token.DoesNotExist:
+            return None
     
     # def save(self, *args, **kwargs):
     #     self.password = make_password(self.password)
     #     super(User, self).save(*args, **kwargs) 
 
 class Storefront(models.Model):
-    user = models.ForeignKey(User, to_field="username", on_delete=models.CASCADE)
+    account = models.ForeignKey(Account, on_delete=models.CASCADE)
     store_type = models.CharField(max_length=255, null=False,)
     store_url = models.CharField(max_length=255, null=False, unique=True)
     key = models.CharField(max_length=255, null=False)

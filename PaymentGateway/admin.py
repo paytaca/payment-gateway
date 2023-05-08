@@ -1,5 +1,5 @@
 from django.contrib import admin
-from PaymentGateway.models import Order, User, Storefront, Product, OrderItem, TotalSales, TotalSalesYesterday, TotalSalesByMonth, TotalSalesByYear
+from PaymentGateway.models import Order, Account, Storefront, Product, OrderItem, TotalSales, TotalSalesYesterday, TotalSalesByMonth, TotalSalesByYear
 # Register your models here.
 
 class OrderAdmin(admin.ModelAdmin):
@@ -16,9 +16,9 @@ class UserAdmin(admin.ModelAdmin):
     search_fields = ("username",)
 
 class StorefrontAdmin(admin.ModelAdmin):
-    list_display = ("user", "store_type", "store_url", "key", "secret", "created_at", "updated_at")
-    list_filter = ("user", "store_type", "created_at", "updated_at")
-    search_fields = ("user",)
+    list_display = ("account", "store_type", "store_url", "key", "secret", "created_at", "updated_at")
+    list_filter = ("account", "store_type", "created_at", "updated_at")
+    search_fields = ("account",)
 
 class ProductAdmin(admin.ModelAdmin):
     list_display = ("store", "product_id", "name", "price")
@@ -59,7 +59,7 @@ class TotalSalesByYearAdmin(admin.ModelAdmin):
         return False
     
 admin.site.register(Order, OrderAdmin)
-admin.site.register(User, UserAdmin)
+admin.site.register(Account, UserAdmin)
 admin.site.register(Storefront, StorefrontAdmin)
 admin.site.register(Product, ProductAdmin)
 admin.site.register(OrderItem, OrderItemAdmin)

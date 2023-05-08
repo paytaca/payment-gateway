@@ -1,10 +1,10 @@
-from .models import User
+from .models import Account
 from django import forms
 from django.forms import ModelForm
 
 class UserForm(ModelForm):
     class Meta:
-        model = User
+        model = Account
         fields = (
             'full_name',
             'email',
@@ -14,7 +14,7 @@ class UserForm(ModelForm):
         
 class WalletForm(ModelForm):
     class Meta:
-        model = User
+        model = Account
         fields = (
             'xpub_key',
 		    'wallet_hash',

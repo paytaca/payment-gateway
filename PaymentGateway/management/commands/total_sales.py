@@ -51,6 +51,11 @@ class Command(BaseCommand):
                 total_orders_percent = (yesterday_total_sales.total_orders- total_orders) / yesterday_total_sales.total_orders / yesterday_total_sales.total_orders * 100
                 total_customers_percent = (yesterday_total_sales.total_customers - total_customers) / yesterday_total_sales.total_customers * 100
                 products_sold_percent = (yesterday_total_sales.products_sold - products_sold) / yesterday_total_sales.products_sold * 100
+            else:
+                total_sale_percent = 0
+                total_orders_percent = 0
+                total_customers_percent = 0
+                products_sold_percent = 0
 
             # Update or create TotalSales object for the storefront and today's date
             TotalSales.objects.update_or_create(

@@ -7,16 +7,21 @@ import watchtower
 from datetime import datetime
 from decimal import Decimal
 
+from rest_framework import status
+from rest_framework.decorators import api_view
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.permissions import AllowAny
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.status import HTTP_400_BAD_REQUEST
 # from rest_framework.permissions import DjangoModelPermissionsOrAnonReadOnly
 
 from django.contrib.auth import authenticate, login
+from django.conf import settings
+from django.http import JsonResponse
 # from django.contrib.auth.decorators import permission_required
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import Permission
@@ -24,23 +29,54 @@ from django.contrib.auth.hashers import check_password
 from django.shortcuts import get_object_or_404
 
 from woocommerce import API
-from .models import Order, Storefront, User, Product, OrderItem
+from .models import Order, Storefront, Account, Product, OrderItem, TotalSales, TotalSalesYesterday, TotalSalesByMonth, TotalSalesByYear
 from .forms import UserForm, WalletForm
-from bch_api.serializers import UserSerializer, ListUsersSerializer
+from bch_api.serializers import UserSerializer, ListUsersSerializer, TotalSalesSerializer, TotalSalesYesterdaySerializer, TotalSalesByMonthSerializer, TotalSalesByYearSerializer
+
+# ------------------------------------------------------------------------------
+# ACCOUNT/USER
+# ------------------------------------------------------------------------------
+
+@api_view(['GET'])
+def user_info(request):
+    # Get the token from the request headers or query params
+    token_key = request.META.get('HTTP_AUTHORIZATION', '').split('Token ')[-1] or \
+                request.GET.get('token')
+
+    if token_key:
+        # Use the token to retrieve the member instance
+        account = Account.get_account_from_token(token_key)
+
+        if account:
+            # Return the member's info in a JSON response
+            user = Account.objects.get(email=account.email)
+            account = user
+            
+            response_data = {
+                'id': str(account.user_id),
+                'full_name': account.full_name,
+                'email': account.email,
+                'username': account.username,
+                'xpub_key': account.xpub_key,
+                'wallet_hash': account.wallet_hash,
+                'created_at': account.created_at,
+            }
+            return JsonResponse(response_data)
+            # return JsonResponse(user)
+
+    # Token is invalid or missing
+    return JsonResponse({'error': 'Invalid or missing token.'}, status=HTTP_400_BAD_REQUEST)
 
 class UserApiView(APIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
-    queryset = User.objects.all()
+    queryset = Account.objects.all()
     
     # user = authenticate(username='john', password='secret')
     
     def get(self, request):
-        '''
-        List all the todo items for given requested user
-        '''
         # todos = Todo.objects.filter(user = request.user.id)
         # todos = Order.objects.filter(user = str(request.user))
-        get_users = User.objects.all()
+        get_users = Account.objects.all()
         # serializer = TodoSerializer(todos, many=True)
         serializer = ListUsersSerializer(get_users, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -50,21 +86,39 @@ class SignUpAPIView(APIView):
     
     @csrf_exempt
     def post(self, request):
-        form = UserForm(request.data)
+        email = request.data.get('email')
+        username = request.data.get('username')
         
-        if form.is_valid():
-            save_form = form.save(commit=False)
-            save_form.save()
-            
-            token = Token.objects.create(user=save_form.auth_user)
-            
-            return Response({'token': token.key, 'status': 'New User added'})
+        user_email = Account.objects.filter(email=email).first()
+        user_username = Account.objects.filter(username=username).first()
+        if user_email:
+            return Response({'status': 'errors', 'errors': {'email': 'Email already exists'}})
+        elif user_username:
+            return Response({'status': 'errors', 'errors': {'username': 'Username already exists'}})
         else:
-            return Response({'status': 'errors', 'errors': form.errors})
+            form = UserForm(request.data)
+            if form.is_valid():
+                save_form = form.save(commit=False)
+                save_form.save()
+                
+                token = Token.objects.create(user=save_form.auth_user)
+                
+                return Response({'token': token.key, 'status': 'New User added', 'status': 'success'})
+            else:
+                return Response({'status': 'errors', 'errors': form.errors})
+        
         
 class LoginAPIView(APIView):
     # permission_classes = [IsAuthenticated]  # Add this line to require authentication
     permission_classes = [AllowAny]
+    
+    # @csrf_exempt
+    # def get(self, request):
+    #     csrf_token = request.COOKIES.get('csrftoken')
+    #     if not csrf_token:
+    #         csrf_token = settings.CSRF_COOKIE
+    #     return Response({'csrf_token': csrf_token})
+        
     
     @csrf_exempt
     def post(self, request):
@@ -75,23 +129,39 @@ class LoginAPIView(APIView):
         
         if user is not None:
             token, _ = Token.objects.get_or_create(user=user)
-            user = User.objects.get(email=email)
+            # login(request, user)
+            user = Account.objects.get(email=email)
             full_name = user.full_name
             return Response({'token': token.key, 'full_name': full_name , 'status': 'success'})
         else:
             return Response({'status': 'error', 'message': 'Invalid email or password'})
         
-class WalletAPIView(APIView):
+class EditAccountAPIView(APIView):
+    @csrf_exempt
     def post(self, request):
-        form = WalletForm(request.data)
+        return Response({'test': 'test'})
+        
+class WalletAPIView(APIView):
+    # permission_classes = [IsAuthenticated]  # Add this line to require authentication
+    authentication_classes = [TokenAuthentication]
+    # permission_classes = [AllowAny]
+    
+    @csrf_exempt
+    def post(self, request):
+        user = request.user
+        form = WalletForm(request.data, instance=user)
         
         if form.is_valid():
             save_form = form.save(commit=False)
             save_form.save()
             
-            return Response({'status': 'Paytaca Wallet updated'})
+            return Response({'status': 'success', 'status': 'Paytaca Wallet updated'})
         else:
             return Response({'status': 'errors', 'errors': form.errors})
+        
+# ------------------------------------------------------------------------------
+# ORDERS
+# ------------------------------------------------------------------------------
 
 class GetOrderAPIView(APIView):
     def post(self, request):
@@ -196,7 +266,7 @@ class TotalBCHAPIView(APIView):
         total_bch = order.total_bch
 
         # generate a new BCH address for the order using the associated user of the storefront
-        owner = storefront.user
+        owner = storefront.account
         new_bch_address = self.generate_address(
             project_id = "964e97eb-b88c-4562-ae18-c45c90756db7",
             wallet_hash = owner.wallet_hash,
@@ -282,3 +352,31 @@ class ProcessOrderAPIView(APIView):
 
         except Exception as e:
             return Response({'success': False, 'error': str(e)})
+   
+# ------------------------------------------------------------------------------
+# TOTAL SALES
+# ------------------------------------------------------------------------------   
+
+class TotalSalesAPIView(APIView):
+    def get(self, request):
+        get_total_sales = TotalSales.objects.all()
+        serializer = TotalSalesSerializer(get_total_sales, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class TotalSalesYesterdayAPIView(APIView):
+    def get(self, request):
+        get_total_sales_yesterday = TotalSalesYesterday.objects.all()
+        serializer = TotalSalesYesterdaySerializer(get_total_sales_yesterday, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class TotalSalesByMonthAPIView(APIView):
+    def get(self, request):
+        get_total_sales_by_month = TotalSalesByMonth.objects.all()
+        serializer = TotalSalesByMonthSerializer(get_total_sales_by_month, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class TotalSalesByYearAPIView(APIView):
+    def get(self, request):
+        get_total_sales_by_year = TotalSalesByYear.objects.all()
+        serializer = TotalSalesByYearSerializer(get_total_sales_by_year, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
