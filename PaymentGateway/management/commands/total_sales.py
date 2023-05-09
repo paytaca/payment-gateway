@@ -47,10 +47,21 @@ class Command(BaseCommand):
 
             # Calculate the percentage changes from yesterday's values, if available
             if yesterday_total_sales:
-                total_sale_percent = (yesterday_total_sales.total_sale - total_sale) / yesterday_total_sales.total_sale * 100
-                total_orders_percent = (yesterday_total_sales.total_orders- total_orders) / yesterday_total_sales.total_orders / yesterday_total_sales.total_orders * 100
-                total_customers_percent = (yesterday_total_sales.total_customers - total_customers) / yesterday_total_sales.total_customers * 100
-                products_sold_percent = (yesterday_total_sales.products_sold - products_sold) / yesterday_total_sales.products_sold * 100
+                total_sale_percent = (total_sale - yesterday_total_sales.total_sale) / yesterday_total_sales.total_sale * 100
+                if total_sale_percent < 0:
+                    total_sale_percent = 0
+                
+                total_orders_percent = (total_orders - yesterday_total_sales.total_orders) / yesterday_total_sales.total_orders * 100
+                if total_orders_percent < 0:
+                    total_orders_percent = 0
+                
+                total_customers_percent = (total_customers - yesterday_total_sales.total_customers) / yesterday_total_sales.total_customers * 100
+                if total_customers_percent < 0:
+                    total_customers_percent = 0
+                
+                products_sold_percent = (products_sold - yesterday_total_sales.products_sold) / yesterday_total_sales.products_sold * 100
+                if products_sold_percent < 0:
+                    products_sold_percent = 0
             else:
                 total_sale_percent = 0
                 total_orders_percent = 0
