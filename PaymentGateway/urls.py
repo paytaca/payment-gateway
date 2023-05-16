@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import ProcessOrderAPIView, GetOrderAPIView, TotalBCHAPIView, UserApiView, SignUpAPIView, LoginAPIView, WalletAPIView
+from .views import ProcessOrderAPIView, GetOrderAPIView, TotalBCHAPIView, UserApiView, SignUpAPIView, LoginAPIView, WalletAPIView, StorefrontAPIView
 from .views import TotalSalesAPIView, TotalSalesYesterdayAPIView, TotalSalesByMonthAPIView, TotalSalesByYearAPIView
 from .views import user_info
 # from . import views
@@ -15,8 +15,10 @@ urlpatterns = [
     # path('user/info/', views.member_info, name='member_info'),
     path('user/info/', user_info, name='user_info'),
     path('user/wallet-update/', WalletAPIView.as_view(), name='wallet_update'),
+    path('user/storefront/', StorefrontAPIView.as_view(), name='storefront'),
     
     path('total-sales/', TotalSalesAPIView.as_view(), name='total_sales'),
+    # path('total-sales/', TotalSalesList.as_view(), name='get_total_sales'),
     path('total-sales-yesterday/', TotalSalesYesterdayAPIView.as_view(), name='total_sales_yesterday'),
     path('total-sales-month/', TotalSalesByMonthAPIView.as_view(), name='total_sales_by_month'),
     path('total-sales-year/', TotalSalesByYearAPIView.as_view(), name='total_sales_by_year'),

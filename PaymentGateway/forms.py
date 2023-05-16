@@ -1,4 +1,4 @@
-from .models import Account
+from .models import Account, Storefront
 from django import forms
 from django.forms import ModelForm
 
@@ -18,4 +18,15 @@ class WalletForm(ModelForm):
         fields = (
             'xpub_key',
 		    'wallet_hash',
+        )
+        
+class StorefrontForm(ModelForm):
+    class Meta:
+        model = Storefront
+        fields = (
+            'account',
+            'store_type',
+            'store_url',
+            'key',
+            'secret'
         )

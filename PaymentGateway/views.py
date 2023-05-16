@@ -10,6 +10,7 @@ from decimal import Decimal
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
+from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated
@@ -30,7 +31,7 @@ from django.shortcuts import get_object_or_404
 
 from woocommerce import API
 from .models import Order, Storefront, Account, Product, OrderItem, TotalSales, TotalSalesYesterday, TotalSalesByMonth, TotalSalesByYear
-from .forms import UserForm, WalletForm
+from .forms import UserForm, WalletForm, StorefrontForm
 from bch_api.serializers import UserSerializer, ListUsersSerializer, TotalSalesSerializer, TotalSalesYesterdaySerializer, TotalSalesByMonthSerializer, TotalSalesByYearSerializer
 
 # ------------------------------------------------------------------------------
@@ -53,7 +54,7 @@ def user_info(request):
             account = user
             
             response_data = {
-                'id': str(account.user_id),
+                'user_id': str(account.user_id),
                 'full_name': account.full_name,
                 'email': account.email,
                 'username': account.username,
@@ -112,14 +113,6 @@ class LoginAPIView(APIView):
     # permission_classes = [IsAuthenticated]  # Add this line to require authentication
     permission_classes = [AllowAny]
     
-    # @csrf_exempt
-    # def get(self, request):
-    #     csrf_token = request.COOKIES.get('csrftoken')
-    #     if not csrf_token:
-    #         csrf_token = settings.CSRF_COOKIE
-    #     return Response({'csrf_token': csrf_token})
-        
-    
     @csrf_exempt
     def post(self, request):
         email = request.data.get('email')
@@ -136,10 +129,10 @@ class LoginAPIView(APIView):
         else:
             return Response({'status': 'error', 'message': 'Invalid email or password'})
         
-class EditAccountAPIView(APIView):
-    @csrf_exempt
-    def post(self, request):
-        return Response({'test': 'test'})
+# class EditAccountAPIView(APIView):
+#     @csrf_exempt
+#     def post(self, request):
+#         return Response({'test': 'test'})
         
 class WalletAPIView(APIView):
     # permission_classes = [IsAuthenticated]  # Add this line to require authentication
@@ -148,14 +141,35 @@ class WalletAPIView(APIView):
     
     @csrf_exempt
     def post(self, request):
-        user = request.user
-        form = WalletForm(request.data, instance=user)
+        email = request.data.get('email')
+        # xpub_key = request.data.get('xpub_key')
+        # wallet_hash = request.data.get('wallet_hash')
+        
+        account = Account.objects.get(email=email)
+        form = WalletForm(request.data, instance=account)
         
         if form.is_valid():
             save_form = form.save(commit=False)
             save_form.save()
             
             return Response({'status': 'success', 'status': 'Paytaca Wallet updated'})
+        else:
+            return Response({'status': 'errors', 'errors': form.errors})
+        
+class StorefrontAPIView(APIView):
+    # permission_classes = [IsAuthenticated]  # Add this line to require authentication
+    authentication_classes = [TokenAuthentication]
+    # permission_classes = [AllowAny]
+    
+    @csrf_exempt
+    def post(self, request):
+        form = StorefrontForm(request.data)
+        
+        if form.is_valid():
+            save_form = form.save(commit=False)
+            save_form.save()
+            
+            return Response({'status': 'success', 'status': 'Storefront added to account'})
         else:
             return Response({'status': 'errors', 'errors': form.errors})
         
@@ -358,10 +372,44 @@ class ProcessOrderAPIView(APIView):
 # ------------------------------------------------------------------------------   
 
 class TotalSalesAPIView(APIView):
-    def get(self, request):
-        get_total_sales = TotalSales.objects.all()
-        serializer = TotalSalesSerializer(get_total_sales, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    def post(self, request):
+            store_url = request.data.get('store_url')
+            get = TotalSales.objects.filter(store=store_url)
+            serializer = TotalSalesSerializer(get, many=True)
+            return Response(serializer.data[0], status=status.HTTP_200_OK)
+        
+    # def get(self, request):
+    #     # store_url = request.data.get('store_url')
+    #     # storefront = get_object_or_404(Storefront, pk=store_url)
+        
+        
+    #     # get_total_sales = TotalSales.objects.filter(store=store_url)
+        
+    #     get_total_sales = TotalSales.objects.all()
+    #     serializer = TotalSalesSerializer(get_total_sales, many=True)
+    #     return Response(serializer.data, status=status.HTTP_200_OK)
+    #     # return Response(storefront, status=status.HTTP_200_OK)
+
+# class TotalSalesList(APIView):
+#         serializer_class = TotalSalesSerializer
+        
+#         @csrf_exempt
+#         # def get_queryset(self):
+#         #     store = self.kwargs['store']
+#         #     return TotalSales.objects.filter(store=store)
+        
+#         def post(self, request):
+#             store_url = request.data.get('store_url')
+#             get = TotalSales.objects.filter(store=store_url)
+#             serializer = TotalSalesSerializer(get, many=True)
+#             return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        
+#         # get_total_sales = TotalSales.objects.filter(store=store_url)
+        
+#         # get_total_sales = TotalSales.objects.all()
+#         # serializer = TotalSalesSerializer(get_total_sales, many=True)
+#         # return Response(serializer.data, status=status.HTTP_200_OK)
     
 class TotalSalesYesterdayAPIView(APIView):
     def get(self, request):

@@ -97,10 +97,10 @@ class TotalSales(models.Model):
     total_orders = models.IntegerField(default=0)
     products_sold = models.IntegerField(default=0)
     total_customers = models.IntegerField(default=0)
-    total_sale_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
-    total_orders_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
-    products_sold_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
-    total_customers_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    total_sale_percentage = models.DecimalField(max_digits=5, decimal_places=1, default=0)
+    total_orders_percentage = models.DecimalField(max_digits=5, decimal_places=1, default=0)
+    products_sold_percentage = models.DecimalField(max_digits=5, decimal_places=1, default=0)
+    total_customers_percentage = models.DecimalField(max_digits=5, decimal_places=1, default=0)
     date_created = models.DateField(blank=True, null=True)
 
 class TotalSalesYesterday(models.Model):
