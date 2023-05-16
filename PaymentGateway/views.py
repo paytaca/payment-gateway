@@ -33,6 +33,7 @@ from woocommerce import API
 from .models import Order, Storefront, Account, Product, OrderItem, TotalSales, TotalSalesYesterday, TotalSalesByMonth, TotalSalesByYear
 from .forms import UserForm, WalletForm, StorefrontForm
 from bch_api.serializers import UserSerializer, ListUsersSerializer, TotalSalesSerializer, TotalSalesYesterdaySerializer, TotalSalesByMonthSerializer, TotalSalesByYearSerializer
+from PaymentGateway.serializers import GetOrderSerializer, TotalBCHSerializer, ProcessOrderSerializer
 
 # ------------------------------------------------------------------------------
 # ACCOUNT/USER
@@ -180,14 +181,12 @@ class StorefrontAPIView(APIView):
 class GetOrderAPIView(APIView):
     def post(self, request):
         # extract order details from the request
-        order_id = request.data.get('order_id')
-        store_url = request.data.get('store_url')
-
-        # perform any necessary validation on the order ID and storefront URL
-        if not order_id:
-            return Response('Order ID is required.', status=status.HTTP_400_BAD_REQUEST)
-        if not store_url:
-            return Response('Storefront URL is required.', status=status.HTTP_400_BAD_REQUEST)
+        serializer = GetOrderSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        order_id = serializer.validated_data['order_id']
+        store_url = serializer.validated_data['store_url']
         
         # check if the store_url exists in Storefront model
         storefront = get_object_or_404(Storefront, store_url=store_url)
@@ -263,14 +262,12 @@ class GetOrderAPIView(APIView):
 class TotalBCHAPIView(APIView):
     def post(self, request):
         # get the order ID and storefront URL from the POST request
-        order_id = request.data.get('order_id')
-        store_url = request.data.get('store_url')
-
-        # perform any necessary validation on the order ID and storefront URL
-        if not order_id:
-            return Response({'error': 'Order ID is required.'}, status=status.HTTP_400_BAD_REQUEST)
-        if not store_url:
-            return Response({'error': 'Storefront URL is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        serializer = TotalBCHSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        order_id = serializer.validated_data['order_id']
+        store_url = serializer.validated_data['store_url']
 
         # get the order and storefront using the order ID and storefront URL
         storefront = get_object_or_404(Storefront, store_url=store_url)
@@ -325,10 +322,15 @@ class TotalBCHAPIView(APIView):
 class ProcessOrderAPIView(APIView):
     def post(self, request):
         # Get the order ID, store URL, and total recieved from the request body
-        order_id = request.data.get('order_id')
-        store_url = request.data.get('store_url')
-        total_recieved = request.data.get('total_recieved')
+        serializer = ProcessOrderSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        order_id = serializer.validated_data['order_id']
+        store_url = serializer.validated_data['store_url']
+        total_received = serializer.validated_data['total_received']
 
+        print(total_received)
         # Get the order from the database using the order ID and store URL
         order = get_object_or_404(Order, order_id=order_id, store=store_url)
 
@@ -336,7 +338,7 @@ class ProcessOrderAPIView(APIView):
             # Update the status of the order
             order.status = 'completed'
             order.updated_at = datetime.now()
-            order.total_received = total_recieved
+            order.total_received = total_received
             order.save()
 
             # Mark the order as completed in WooCommerce using the REST API
