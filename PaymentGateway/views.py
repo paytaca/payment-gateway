@@ -30,7 +30,7 @@ from django.contrib.auth.hashers import check_password
 from django.shortcuts import get_object_or_404
 
 from woocommerce import API
-from .models import Order, Storefront, Account, Product, OrderItem, TotalSales, TotalSalesYesterday, TotalSalesByMonth, TotalSalesByYear
+from .models import Order, Storefront, Account, OrderItem, TotalSales, TotalSalesYesterday, TotalSalesByMonth, TotalSalesByYear
 from .forms import UserForm, WalletForm, StorefrontForm
 from bch_api.serializers import UserSerializer, ListUsersSerializer, TotalSalesSerializer, TotalSalesYesterdaySerializer, TotalSalesByMonthSerializer, TotalSalesByYearSerializer
 from PaymentGateway.serializers import GetOrderSerializer, TotalBCHSerializer, ProcessOrderSerializer
@@ -238,20 +238,11 @@ class GetOrderAPIView(APIView):
         # get the products from the order and save them in the database
         for item in order_data['line_items']:
             product_id = item['product_id']
-            product = Product.objects.filter(store=storefront, product_id=product_id).first()
-            if product is None:
-                product_data = wcapi.get(f"products/{product_id}").json()
-                product = Product(
-                    store=storefront,
-                    product_id=product_id,
-                    name=product_data['name'],
-                    price=Decimal(product_data['price']),
-                )
-                product.save()
+            product_data = wcapi.get(f"products/{product_id}").json()
             quantity = item['quantity']
             OrderItem.objects.create(
                 order=order,
-                product=product,
+                product=product_data['name'],
                 store=storefront,
                 quantity=quantity,
                 price=Decimal(item['price']),
