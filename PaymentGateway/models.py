@@ -9,6 +9,8 @@ class Account(models.Model):
     email = models.EmailField(max_length=255, null=False, unique=True)
     username = models.CharField(max_length=255, null=False, unique=True)
     password = models.CharField(max_length=100, null=False)
+    woocommerce = models.BooleanField(default=False)
+    woocommerce_url = models.CharField(max_length=255, null=True, unique=True)
     xpub_key = models.CharField(max_length=255, null=True)
     wallet_hash = models.CharField(max_length=255, null=True)
     created_at = models.DateTimeField(auto_now_add=True)

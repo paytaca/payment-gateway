@@ -59,6 +59,8 @@ def user_info(request):
                 'full_name': account.full_name,
                 'email': account.email,
                 'username': account.username,
+                'woocommerce': account.woocommerce,
+                'woocommerce_url': account.woocommerce_url,
                 'xpub_key': account.xpub_key,
                 'wallet_hash': account.wallet_hash,
                 'created_at': account.created_at,
@@ -165,10 +167,17 @@ class StorefrontAPIView(APIView):
     @csrf_exempt
     def post(self, request):
         form = StorefrontForm(request.data)
+        account = request.data.get('account')
+        url = request.data.get('store_url')
+        account = Account.objects.get(user_id=account)
         
         if form.is_valid():
             save_form = form.save(commit=False)
             save_form.save()
+            
+            account.woocommerce = True
+            account.woocommerce_url = url
+            account.save()
             
             return Response({'status': 'success', 'status': 'Storefront added to account'})
         else:
@@ -374,15 +383,28 @@ class ProcessOrderAPIView(APIView):
 # ------------------------------------------------------------------------------   
 
 class TotalSalesAPIView(APIView):
-    def post(self, request):
-            store_url = request.data.get('store_url')
-            get = TotalSales.objects.filter(store=store_url)
-            serializer = TotalSalesSerializer(get, many=True)
-            return Response(serializer.data[0], status=status.HTTP_200_OK)
+    # def post(self, request):
+    #         store_url = request.data.get('store_url')
+    #         get = TotalSales.objects.filter(store=store_url)
+    #         serializer = TotalSalesSerializer(get, many=True)
+    #         return Response(serializer.data, status=status.HTTP_200_OK)
         
     # def get(self, request):
-    #     # store_url = request.data.get('store_url')
-    #     # storefront = get_object_or_404(Storefront, pk=store_url)
+    #     store_url = request.query_params.get('store_url')
+    #     print (store_url)
+    #     total_sales = get_object_or_404(TotalSales, store=store_url)
+    #     serializer = TotalSalesSerializer(total_sales)
+    #     return Response(serializer.data)
+    
+    def post(self, request):
+        store_url = request.data.get('store_url')
+        if not store_url:
+            return Response({'error': 'store_url parameter is required.'}, status=400)
+            
+        total_sales = TotalSales.objects.filter(store=store_url)
+        serializer = TotalSalesSerializer(total_sales, many=True)
+        print(serializer.data)
+        return Response(serializer.data[0] if serializer.data else {}, status=200)
         
         
     #     # get_total_sales = TotalSales.objects.filter(store=store_url)

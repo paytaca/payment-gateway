@@ -11,7 +11,7 @@ class OrderAdmin(admin.ModelAdmin):
         return False
     
 class UserAdmin(admin.ModelAdmin):
-    list_display = ("user_id", "full_name", "email", "username", "password", "xpub_key", "wallet_hash", "created_at")
+    list_display = ("user_id", "full_name", "email", "username", "password", "woocommerce", "woocommerce_url", "xpub_key", "wallet_hash", "created_at")
     list_filter = ("user_id", "created_at")
     search_fields = ("username",)
 
@@ -34,8 +34,8 @@ class TotalSalesAdmin(admin.ModelAdmin):
     list_display = ("store", "total_sale", "total_orders", "products_sold", "total_customers", "date_created", "total_sale_percentage", "total_orders_percentage", "products_sold_percentage", "total_customers_percentage")
     list_filter = ("store", "total_sale")
 
-    def has_add_permission(self, request, obj=None):
-        return False
+    # def has_add_permission(self, request, obj=None):
+    #     return False
 
 class TotalSalesYesterdayAdmin(admin.ModelAdmin):
     list_display = ("store", "total_sale", "total_orders", "products_sold", "total_customers", "date_created")
