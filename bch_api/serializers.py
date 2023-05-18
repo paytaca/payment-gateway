@@ -1,6 +1,6 @@
 from rest_framework import serializers
 # from .models import Todo
-from PaymentGateway.models import Account, Storefront, Order, TotalSales, TotalSalesYesterday, TotalSalesByMonth, TotalSalesByYear
+from PaymentGateway.models import Account, Storefront, Order, TotalSales, TotalSalesYesterday, TotalSalesByMonth, TotalSalesByYear, Total
 
 class StorefrontSerializer(serializers.ModelSerializer):
     class Meta:
@@ -47,4 +47,8 @@ class TotalSalesByYearSerializer(serializers.ModelSerializer):
         model = TotalSalesByYear
         fields = '__all__'
 
+class TotalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Total
+        fields = '__all__'
 # ---------------------------------------------------------

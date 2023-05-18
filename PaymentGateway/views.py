@@ -30,9 +30,9 @@ from django.contrib.auth.hashers import check_password
 from django.shortcuts import get_object_or_404
 
 from woocommerce import API
-from .models import Order, Storefront, Account, OrderItem, TotalSales, TotalSalesYesterday, TotalSalesByMonth, TotalSalesByYear
+from .models import Order, Storefront, Account, OrderItem, TotalSales, TotalSalesYesterday, TotalSalesByMonth, TotalSalesByYear, Total
 from .forms import UserForm, WalletForm, StorefrontForm
-from bch_api.serializers import UserSerializer, ListUsersSerializer, TotalSalesSerializer, TotalSalesYesterdaySerializer, TotalSalesByMonthSerializer, TotalSalesByYearSerializer
+from bch_api.serializers import UserSerializer, ListUsersSerializer, TotalSalesSerializer, TotalSalesYesterdaySerializer, TotalSalesByMonthSerializer, TotalSalesByYearSerializer, TotalSerializer
 from PaymentGateway.serializers import GetOrderSerializer, TotalBCHSerializer, ProcessOrderSerializer
 
 # ------------------------------------------------------------------------------
@@ -442,4 +442,10 @@ class TotalSalesByYearAPIView(APIView):
     def get(self, request):
         get_total_sales_by_year = TotalSalesByYear.objects.all()
         serializer = TotalSalesByYearSerializer(get_total_sales_by_year, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class TotalAPIView(APIView):
+    def get(self, request):
+        get_total_sales = Total.objects.all()
+        serializer = TotalSerializer(get_total_sales, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
