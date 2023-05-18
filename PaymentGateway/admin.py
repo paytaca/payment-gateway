@@ -1,5 +1,5 @@
 from django.contrib import admin
-from PaymentGateway.models import Order, Account, Storefront, OrderItem, TotalSales, TotalSalesYesterday, TotalSalesByMonth, TotalSalesByYear
+from PaymentGateway.models import Order, Account, Storefront, OrderItem, TotalSales, TotalSalesYesterday, TotalSalesByMonth, TotalSalesByYear, Total
 # Register your models here.
 
 class OrderAdmin(admin.ModelAdmin):
@@ -52,7 +52,11 @@ class TotalSalesByYearAdmin(admin.ModelAdmin):
 
     def has_add_permission(self, request, obj=None):
         return False
-    
+
+class TotalAdmin(admin.ModelAdmin):
+    list_display = ("store", "total")
+    list_filter = ("store",)
+
 admin.site.register(Order, OrderAdmin)
 admin.site.register(Account, UserAdmin)
 admin.site.register(Storefront, StorefrontAdmin)
@@ -61,3 +65,4 @@ admin.site.register(TotalSales, TotalSalesAdmin)
 admin.site.register(TotalSalesYesterday, TotalSalesYesterdayAdmin)
 admin.site.register(TotalSalesByMonth, TotalSalesByMonthAdmin)
 admin.site.register(TotalSalesByYear, TotalSalesByYearAdmin)
+admin.site.register(Total, TotalAdmin)

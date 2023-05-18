@@ -111,9 +111,10 @@ class TotalSalesByYear(models.Model):
     year = models.IntegerField()
     total_sale = models.DecimalField(max_digits=10, decimal_places=2)
 
-
-
-
+class Total(models.Model):
+    store = models.ForeignKey(Storefront, to_field="store_url", on_delete=models.CASCADE)
+    total = models.IntegerField()
+    updated_at = models.DateTimeField(auto_now=True, blank=True)
 
 
 
