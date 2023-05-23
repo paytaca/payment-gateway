@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.db.models import Sum
 from PaymentGateway.models import Storefront, Order, Total
+from decimal import Decimal
 
 class Command(BaseCommand):
     help = 'Calculate and store all total sales'
@@ -11,7 +12,7 @@ class Command(BaseCommand):
                 total_sale = Order.objects.filter(
                     status = 'completed',
                     store = storefront,
-                ).aggregate(Sum('total')) or 0
+                ).aggregate(Sum('total'))['total__sum'] or Decimal('0.00')
 
                 Total.objects.update_or_create(
                     store=storefront,
