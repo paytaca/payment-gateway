@@ -10,6 +10,7 @@ class Account(models.Model):
     username = models.CharField(max_length=255, null=False, unique=True)
     password = models.CharField(max_length=100, null=False)
     woocommerce = models.BooleanField(default=False)
+    paytaca = models.BooleanField(default=False)
     woocommerce_url = models.CharField(max_length=255, null=True, unique=True)
     xpub_key = models.CharField(max_length=255, null=True)
     wallet_hash = models.CharField(max_length=255, null=True)
@@ -110,6 +111,8 @@ class TotalSalesByYear(models.Model):
     store = models.ForeignKey(Storefront, to_field="store_url", on_delete=models.CASCADE)
     year = models.IntegerField()
     total_sale = models.DecimalField(max_digits=10, decimal_places=2)
+    class Meta:
+        ordering = ('year',)
 
 class Total(models.Model):
     store = models.ForeignKey(Storefront, to_field="store_url", on_delete=models.CASCADE)
